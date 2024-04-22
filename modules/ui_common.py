@@ -156,6 +156,7 @@ class OutputPanel:
     infotext = None
     html_log = None
     button_upscale = None
+    button_bulkupscale = None
 
 
 def create_output_panel(tabname, outdir, toprow=None):
@@ -198,6 +199,7 @@ def create_output_panel(tabname, outdir, toprow=None):
 
                 if tabname == 'txt2img':
                     res.button_upscale = ToolButton('✨', elem_id=f'{tabname}_upscale', tooltip="Create an upscaled version of the current image using hires fix settings.")
+                    res.button_bulkupscale = ToolButton('BULK✨', elem_id=f'{tabname}_bulkupscale', tooltip="Create an upscaled version of the selected images using hires fix settings.")
 
             open_folder_button.click(
                 fn=lambda images, index: open_folder(shared.opts.outdir_samples or outdir, images, index),

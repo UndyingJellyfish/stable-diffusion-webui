@@ -427,6 +427,14 @@ def create_ui():
                 show_progress=False,
             )
 
+            output_panel.button_bulkupscale.click(
+                fn=wrap_gradio_gpu_call(modules.txt2img.txt2img_bulkupscale, extra_outputs=[None, '', '']),
+                _js="submit_txt2img_bulkupscale",
+                inputs=txt2img_inputs[0:1] + [output_panel.gallery, dummy_component, output_panel.generation_info] + txt2img_inputs[1:],
+                outputs=txt2img_outputs,
+                show_progress=False,
+            )
+
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
             toprow.restore_progress_button.click(

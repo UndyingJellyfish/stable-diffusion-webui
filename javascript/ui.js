@@ -26,6 +26,18 @@ function selected_gallery_index() {
     return all_gallery_buttons().findIndex(elem => elem.classList.contains('selected'));
 }
 
+function multiSelected_gallery_indexes() {
+    var allGalleryButtons = all_gallery_buttons();
+    var indexes = [], i;
+    for(i = 0; i < allGalleryButtons.length; i++) {
+        // differentiate selected and multi-selected class since selected is used by single image hires upscaler
+        if (allGalleryButtons[i].classList.contains('multiSelected')) { 
+            indexes.push(i);
+        }
+    }
+    return indexes;
+}
+
 function extract_image_from_gallery(gallery) {
     if (gallery.length == 0) {
         return [null];
@@ -162,6 +174,16 @@ function submit_txt2img_upscale() {
     var res = submit(...arguments);
 
     res[2] = selected_gallery_index();
+
+    return res;
+}
+
+function submit_txt2img_bulkupscale() {
+    var res = submit(...arguments);
+
+    res[2] = multiSelected_gallery_indexes();
+
+    console.log(res[2]);
 
     return res;
 }

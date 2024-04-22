@@ -98,6 +98,64 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
 
     return new_gallery, json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
+def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_indexes, generation_info, *args):
+    assert len(gallery) > 0, 'No image to upscale'
+    assert len(gallery_indexes) > 0, 'No images multi-selected for upscale'
+
+    print(gallery_indexes)
+    print(len(gallery_indexes))
+
+    for gallery_index in gallery_indexes:
+        assert 0 <= gallery_index < len(gallery), f'Bad image index {gallery_index}.'
+    
+    p = txt2img_create_processing(id_task, request, *args, force_enable_hr=True)
+    p.batch_size = 1
+    p.n_iter
+
+    # txt2img_bulkupscale attribute that signifies this is called by txt2img_bulkupscale
+    p.txt2img_bulkupscale = True
+
+    geninfo = json.loads(generation_info)
+
+    processed = None
+    
+    for gallery_index in gallery_indexes:
+        image_info = gallery[gallery_index]
+        p.firstpass_image = infotext_utils.image_from_url_text(image_info)
+
+        parameters = parse_generation_parameters(geninfo.get('infotexts')[gallery_index], [])
+        p.seed = parameters.get('Seed', -1)
+        print(p.seed)
+        p.subseed = parameters.get('Variation seed', -1)
+        print(p.subseed)
+
+        p.override_settings['save_images_before_highres_fix'] = False
+
+        print(image_info)
+
+        with closing(p):
+            processed = modules.scripts.scripts_txt2img.run(p, *p.script_args)
+
+            if processed is None:
+                processed = processing.process_images(p)
+
+            print(processed)
+
+    shared.total_tqdm.clear()
+
+    new_gallery = []
+    for i, image in enumerate(gallery):
+        for gallery_index in gallery_indexes:
+            if i == gallery_index:
+                geninfo["infotexts"][gallery_index: gallery_index+1] = processed.infotexts
+                new_gallery.extend(processed.images)
+            else:
+                fake_image = Image.new(mode="RGB", size=(1, 1))
+                fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
+                new_gallery.append(fake_image)
+
+
+    return new_gallery, json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
 def txt2img(id_task: str, request: gr.Request, *args):
     p = txt2img_create_processing(id_task, request, *args)

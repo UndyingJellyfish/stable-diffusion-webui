@@ -403,6 +403,7 @@ def create_ui():
 
             txt2img_outputs = [
                 output_panel.gallery,
+                output_panel.galleryCheckboxes,
                 output_panel.generation_info,
                 output_panel.infotext,
                 output_panel.html_log,

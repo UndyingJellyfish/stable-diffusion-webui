@@ -16,7 +16,7 @@ folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 
 
-def update_generation_info(generation_info, html_info, img_index):
+def update_generation_info(generation_info, html_info, img_index, available_indexes):
     try:
         generation_info = json.loads(generation_info)
         if img_index < 0 or img_index >= len(generation_info["infotexts"]):
@@ -26,17 +26,6 @@ def update_generation_info(generation_info, html_info, img_index):
         pass
     # if the json parse or anything else fails, just return the old html_info
     return html_info, gr.update()
-
-
-def update_gallery_checkboxes(old_value, gallery_indexes):
-    try:
-        new_value = gr.CheckboxGroup(choices=gallery_indexes, elem_id="gallery_checkboxes")
-        return new_value, gr.update()
-    except Exception:
-        pass
-
-    # if the json parse or anything else fails, just return the old html_info
-    return old_value, gr.update()
 
 
 def plaintext_to_html(text, classname=None):
@@ -164,7 +153,6 @@ def save_files(js_data, images, do_make_zip, index):
 class OutputPanel:
     gallery = None
     galleryCheckboxes = None
-    demoButton = None
     generation_info = None
     infotext = None
     html_log = None
@@ -196,22 +184,7 @@ def create_output_panel(tabname, outdir, toprow=None):
         with gr.Column(variant='panel', elem_id=f"{tabname}_results_panel"):
             with gr.Group(elem_id=f"{tabname}_gallery_container"):
                 res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
-                if tabname == 'txt2img':
-                    res.galleryCheckboxes = gr.CheckboxGroup(elem_id="gallery_checkboxes")
-                    res.demoButton = gr.Button('Demo button')
-                    res.demoButton.click(
-                        fn=lambda selfRef, indexes: update_gallery_checkboxes(selfRef, indexes),
-                        _js="function(x, y) { return [x, all_gallery_buttons().map((a, i) => i)]; }",
-                        inputs=[
-                            res.galleryCheckboxes,
-                            res.demoButton  # placeholder for indexes
-                        ],
-                        outputs=[
-                            res.galleryCheckboxes,
-                            res.galleryCheckboxes
-                        ],
-                        show_progress=False
-                    )
+                res.galleryCheckboxes = gr.CheckboxGroup(label="Multiselect hires", show_label=False, elem_id="gallery_checkboxes", type="index", interactive=True)
 
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
@@ -252,7 +225,7 @@ def create_output_panel(tabname, outdir, toprow=None):
                         generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                         generation_info_button.click(
                             fn=update_generation_info,
-                            _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
+                            _js="function(w, x, y, z){ console.log('debug'); return [w, x, selected_gallery_index()] }",
                             inputs=[res.generation_info, res.infotext, res.infotext],
                             outputs=[res.infotext, res.infotext],
                             show_progress=False,

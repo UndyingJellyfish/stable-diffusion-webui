@@ -96,7 +96,7 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
 
     geninfo["infotexts"][gallery_index] = processed.info
 
-    return new_gallery, json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
+    return new_gallery, gr.update(), json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
 def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_indexes, generation_info, *args):
     assert len(gallery) > 0, 'No image to upscale'
@@ -154,7 +154,7 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
                 fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
                 new_gallery.append(fake_image)
 
-    return new_gallery, json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
+    return new_gallery, gr.update(), json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments"), gr.update()
 
 def txt2img(id_task: str, request: gr.Request, *args):
     p = txt2img_create_processing(id_task, request, *args)
@@ -174,4 +174,4 @@ def txt2img(id_task: str, request: gr.Request, *args):
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
+    return processed.images, gr.update(choices=range(0, len(processed.images))), generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")

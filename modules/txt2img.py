@@ -154,7 +154,6 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
                 fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
                 new_gallery.append(fake_image)
 
-
     return new_gallery, json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
 def txt2img(id_task: str, request: gr.Request, *args):

@@ -28,6 +28,17 @@ def update_generation_info(generation_info, html_info, img_index):
     return html_info, gr.update()
 
 
+def update_gallery_checkboxes(old_value, gallery_indexes):
+    try:
+        new_value = gr.CheckboxGroup(choices=gallery_indexes, elem_id="gallery_checkboxes")
+        return new_value, gr.update()
+    except Exception:
+        pass
+
+    # if the json parse or anything else fails, just return the old html_info
+    return old_value, gr.update()
+
+
 def plaintext_to_html(text, classname=None):
     content = "<br>\n".join(html.escape(x) for x in text.split('\n'))
 
@@ -152,6 +163,8 @@ def save_files(js_data, images, do_make_zip, index):
 @dataclasses.dataclass
 class OutputPanel:
     gallery = None
+    galleryCheckboxes = None
+    demoButton = None
     generation_info = None
     infotext = None
     html_log = None
@@ -183,6 +196,22 @@ def create_output_panel(tabname, outdir, toprow=None):
         with gr.Column(variant='panel', elem_id=f"{tabname}_results_panel"):
             with gr.Group(elem_id=f"{tabname}_gallery_container"):
                 res.gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4, preview=True, height=shared.opts.gallery_height or None)
+                if tabname == 'txt2img':
+                    res.galleryCheckboxes = gr.CheckboxGroup(elem_id="gallery_checkboxes")
+                    res.demoButton = gr.Button('Demo button')
+                    res.demoButton.click(
+                        fn=lambda selfRef, indexes: update_gallery_checkboxes(selfRef, indexes),
+                        _js="function(x, y) { return [x, all_gallery_buttons().map((a, i) => i)]; }",
+                        inputs=[
+                            res.galleryCheckboxes,
+                            res.demoButton  # placeholder for indexes
+                        ],
+                        outputs=[
+                            res.galleryCheckboxes,
+                            res.galleryCheckboxes
+                        ],
+                        show_progress=False
+                    )
 
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = ToolButton(folder_symbol, elem_id=f'{tabname}_open_folder', visible=not shared.cmd_opts.hide_ui_dir_config, tooltip="Open images output directory.")
@@ -199,7 +228,7 @@ def create_output_panel(tabname, outdir, toprow=None):
 
                 if tabname == 'txt2img':
                     res.button_upscale = ToolButton('✨', elem_id=f'{tabname}_upscale', tooltip="Create an upscaled version of the current image using hires fix settings.")
-                    res.button_bulkupscale = ToolButton('BULK✨', elem_id=f'{tabname}_bulkupscale', tooltip="Create an upscaled version of the selected images using hires fix settings.")
+                    res.button_bulkupscale = ToolButton('✨++', elem_id=f'{tabname}_bulkupscale', tooltip="Create an upscaled version of the selected images using hires fix settings.")
 
             open_folder_button.click(
                 fn=lambda images, index: open_folder(shared.opts.outdir_samples or outdir, images, index),

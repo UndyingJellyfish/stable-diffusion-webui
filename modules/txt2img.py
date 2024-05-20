@@ -105,54 +105,17 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
     for gallery_index in gallery_indexes:
         assert 0 <= gallery_index < len(gallery), f'Bad image index {gallery_index}.'
     
-    p = txt2img_create_processing(id_task, request, *args, force_enable_hr=True)
-    p.batch_size = 1
-    p.n_iter
+    results = []
+    iter = 0
 
-    # txt2img_bulkupscale attribute that signifies this is called by txt2img_bulkupscale
-    p.txt2img_bulkupscale = True
-
-    geninfo = json.loads(generation_info)
-
-    processed = None
-    
     for gallery_index in gallery_indexes:
-        image_info = gallery[gallery_index]
-        p.firstpass_image = infotext_utils.image_from_url_text(image_info)
+        newGen = txt2img_upscale(id_task, request, gallery, gallery_index, generation_info, *args)
+        results.append(newGen)
+        iter += 1
 
-        parameters = parse_generation_parameters(geninfo.get('infotexts')[gallery_index], [])
-        p.seed = parameters.get('Seed', -1)
-        p.subseed = parameters.get('Variation seed', -1)
+    (new_gallery, _, jsonDumpsGenInfo, processedInfoHtml, processedInfoComments) = results[-1]
 
-        p.override_settings['save_images_before_highres_fix'] = False
-
-        print(image_info)
-
-        with closing(p):
-            processed = modules.scripts.scripts_txt2img.run(p, *p.script_args)
-
-            if processed is None:
-                processed = processing.process_images(p)
-
-            print(processed)
-
-    print('Done with first for loop')
-    
-    shared.total_tqdm.clear()
-
-    new_gallery = []
-    
-    for gallery_index in gallery_indexes:
-        for i, image in enumerate(gallery):
-            if i == gallery_index:
-                geninfo["infotexts"][gallery_index: gallery_index+1] = processed.infotexts
-                new_gallery.extend(processed.images)
-            else:
-                fake_image = Image.new(mode="RGB", size=(1, 1))
-                fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
-                new_gallery.append(fake_image)
-
-    return new_gallery, gr.update(), json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
+    return new_gallery, gr.update(), jsonDumpsGenInfo, processedInfoHtml, processedInfoComments
 
 def txt2img(id_task: str, request: gr.Request, *args):
     p = txt2img_create_processing(id_task, request, *args)

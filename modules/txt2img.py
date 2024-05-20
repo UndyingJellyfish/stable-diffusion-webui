@@ -102,9 +102,6 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
     assert len(gallery) > 0, 'No image to upscale'
     assert len(gallery_indexes) > 0, 'No images multi-selected for upscale'
 
-    print(gallery_indexes)
-    print(len(gallery_indexes))
-
     for gallery_index in gallery_indexes:
         assert 0 <= gallery_index < len(gallery), f'Bad image index {gallery_index}.'
     
@@ -125,9 +122,7 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
 
         parameters = parse_generation_parameters(geninfo.get('infotexts')[gallery_index], [])
         p.seed = parameters.get('Seed', -1)
-        print(p.seed)
         p.subseed = parameters.get('Variation seed', -1)
-        print(p.subseed)
 
         p.override_settings['save_images_before_highres_fix'] = False
 
@@ -141,11 +136,14 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
 
             print(processed)
 
+    print('Done with first for loop')
+    
     shared.total_tqdm.clear()
 
     new_gallery = []
-    for i, image in enumerate(gallery):
-        for gallery_index in gallery_indexes:
+    
+    for gallery_index in gallery_indexes:
+        for i, image in enumerate(gallery):
             if i == gallery_index:
                 geninfo["infotexts"][gallery_index: gallery_index+1] = processed.infotexts
                 new_gallery.extend(processed.images)
@@ -154,7 +152,7 @@ def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_inde
                 fake_image.already_saved_as = image["name"].rsplit('?', 1)[0]
                 new_gallery.append(fake_image)
 
-    return new_gallery, gr.update(), json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments"), gr.update()
+    return new_gallery, gr.update(), json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
 def txt2img(id_task: str, request: gr.Request, *args):
     p = txt2img_create_processing(id_task, request, *args)

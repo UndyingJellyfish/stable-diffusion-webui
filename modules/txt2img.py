@@ -18,15 +18,9 @@ def txt2img_create_processing(id_task: str, request: gr.Request, prompt: str, ne
     if force_enable_hr:
         enable_hr = True
 
-    outpath_samples = opts.outdir_samples or opts.outdir_txt2img_samples
-
-    if opts.outdir_txt2img_upscales:
-        outpath_samples = os.path.join(outpath_samples, opts.outdir_txt2img_upscales)
-
-
     p = processing.StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
-        outpath_samples=outpath_samples,
+        outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
         outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
         prompt=prompt,
         styles=prompt_styles,
@@ -70,6 +64,9 @@ def create_txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_i
     p.n_iter = 1
     # txt2img_upscale attribute that signifies this is called by txt2img_upscale
     p.txt2img_upscale = True
+
+    if opts.outdir_txt2img_upscales:
+        p.outpath_samples = os.path.join(p.outpath_samples, opts.outdir_txt2img_upscales)
 
     geninfo = json.loads(generation_info)
 

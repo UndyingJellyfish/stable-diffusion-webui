@@ -1,8 +1,9 @@
 import json
 from contextlib import closing
 
+import os
 import modules.scripts
-from modules import processing, infotext_utils
+from modules import processing, util, infotext_utils
 from modules.infotext_utils import create_override_settings_dict, parse_generation_parameters
 from modules.shared import opts
 import modules.shared as shared
@@ -17,9 +18,15 @@ def txt2img_create_processing(id_task: str, request: gr.Request, prompt: str, ne
     if force_enable_hr:
         enable_hr = True
 
+    outpath_samples = opts.outdir_samples or opts.outdir_txt2img_samples
+
+    if opts.outdir_txt2img_upscales:
+        outpath_samples = os.path.join(outpath_samples, opts.outdir_txt2img_upscales)
+
+
     p = processing.StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
-        outpath_samples=opts.outdir_samples or opts.outdir_txt2img_samples,
+        outpath_samples=outpath_samples,
         outpath_grids=opts.outdir_grids or opts.outdir_txt2img_grids,
         prompt=prompt,
         styles=prompt_styles,
@@ -54,8 +61,7 @@ def txt2img_create_processing(id_task: str, request: gr.Request, prompt: str, ne
 
     return p
 
-
-def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, generation_info, *args):
+def create_txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, generation_info, *args):
     assert len(gallery) > 0, 'No image to upscale'
     assert 0 <= gallery_index < len(gallery), f'Bad image index: {gallery_index}'
 
@@ -76,6 +82,11 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
 
     p.override_settings['save_images_before_highres_fix'] = False
 
+    return p, geninfo
+
+
+def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, generation_info, *args):
+    (p, geninfo) = create_txt2img_upscale(id_task, request, gallery, gallery_index, generation_info, *args)
     with closing(p):
         processed = modules.scripts.scripts_txt2img.run(p, *p.script_args)
 
@@ -99,9 +110,6 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
     return new_gallery, gr.update(), json.dumps(geninfo), plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
 
 def txt2img_bulkupscale(id_task: str, request: gr.Request, gallery, gallery_indexes, generation_info, *args):
-    assert len(gallery) > 0, 'No image to upscale'
-    assert len(gallery_indexes) > 0, 'No images multi-selected for upscale'
-
     for gallery_index in gallery_indexes:
         assert 0 <= gallery_index < len(gallery), f'Bad image index {gallery_index}.'
     
